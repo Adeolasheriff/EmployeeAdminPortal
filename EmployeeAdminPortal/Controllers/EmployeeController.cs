@@ -26,22 +26,32 @@ namespace EmployeeAdminPortal.Controllers
         // get all users in d Database
         public async Task<IActionResult> Get()
         {
-            // fetch all employee in the db
-
-            var Employees = await _ApplicationDbContext.Employees.ToListAsync();
-
-            //  if user does not exist in the database return not found
-
-            if (Employees == null)
+            try
             {
+                // fetch all employee in the db
 
-                return NotFound("not user found in the db");
+                var Employees = await _ApplicationDbContext.Employees.ToListAsync();
+
+                //  if user does not exist in the database return not found
+
+                if (Employees == null)
+                {
+
+                    return NotFound("not user found in the db");
+
+                }
+
+                // return ok status
+
+                return Ok(Employees);
 
             }
 
-            // return ok status
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
 
-            return Ok(Employees);
+            }
 
         }
 
@@ -51,13 +61,21 @@ namespace EmployeeAdminPortal.Controllers
         // getting user indivdually by id
         public async Task<IActionResult> GetEmployeeById(Guid Id)
         {
-            var employe = await _ApplicationDbContext.Employees.FindAsync(Id);
-            //var employe = await _ApplicationDbContext.Employees.FirstOrDefaultAsync(e => e.Id == Id);
-            if (employe == null)
+            try
             {
-                return NotFound("user not found");
+                var employe = await _ApplicationDbContext.Employees.FindAsync(Id);
+                //var employe = await _ApplicationDbContext.Employees.FirstOrDefaultAsync(e => e.Id == Id);
+                if (employe == null)
+                {
+                    return NotFound("user not found");
+                }
+                return Ok(employe);
             }
-            return Ok(employe);
+
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
 
@@ -70,36 +88,45 @@ namespace EmployeeAdminPortal.Controllers
 
         public async Task<IActionResult> AddEmployee(AddEmployee addEmployee)
         {
-            // checking to see if the user already exist in the database
-
-            var existingUser = await _ApplicationDbContext.Employees.FirstOrDefaultAsync(User => User.Email == addEmployee.Email);
-            if (existingUser != null)
+            try
             {
-                return Conflict("user already exist");
+                // checking to see if the user already exist in the database
+
+                var existingUser = await _ApplicationDbContext.Employees.FirstOrDefaultAsync(User => User.Email == addEmployee.Email);
+                if (existingUser != null)
+                {
+                    return Conflict("user already exist");
+                }
+                // created a DTO Data Transfer Object
+
+                var employe = new Employee()
+                {
+                    // field required to be input 
+
+                    Name = addEmployee.Name,
+                    Email = addEmployee.Email,
+                    Phone = addEmployee.Phone,
+                    Salary = addEmployee.Salary,
+
+                };
+                // Adding user to the  db
+
+                _ApplicationDbContext.Employees.Add(employe);
+                // saving user details to the db
+
+                await _ApplicationDbContext.SaveChangesAsync();
+
+                // returning ok status 
+
+                return Ok(employe);
+
             }
-            // created a DTO Data Transfer Object
 
-            var employe = new Employee()
+            catch (Exception ex)
             {
-                // field required to be input 
+                return BadRequest(ex.Message);
 
-                Name = addEmployee.Name,
-                Email = addEmployee.Email,
-                Phone = addEmployee.Phone,
-                Salary = addEmployee.Salary,
-
-            };
-            // Adding user to the  db
-
-            _ApplicationDbContext.Employees.Add(employe);
-            // saving user details to the db
-
-            await _ApplicationDbContext.SaveChangesAsync();
-
-            // returning ok status 
-
-            return Ok(employe);
-
+            }
         }
 
         // updating user in the database
@@ -108,32 +135,40 @@ namespace EmployeeAdminPortal.Controllers
 
         public async Task<IActionResult> UpdateEmploye(Guid Id, UpdateEmployees updateEmployees)
         {
-            // find user 
-            var employee = await _ApplicationDbContext.Employees.FindAsync(Id);
-
-            // if its equal to null return user not found
-
-            if (employee == null)
+            try
             {
-                return Conflict("user not found in the database");
+                // find user 
+                var employee = await _ApplicationDbContext.Employees.FindAsync(Id);
+
+                // if its equal to null return user not found
+
+                if (employee == null)
+                {
+                    return Conflict("user not found in the database");
+                }
+                // 
+                employee.Name = updateEmployees.Name;
+                employee.Email = updateEmployees.Email;
+                employee.Phone = updateEmployees.Phone;
+                employee.Salary = updateEmployees.Salary;
+
+                // update employee
+
+                _ApplicationDbContext.Employees.Update(employee);
+
+                // save changed detail to the db
+
+                await _ApplicationDbContext.SaveChangesAsync();
+
+                // return ok status
+
+                return Ok(employee);
             }
-            // 
-            employee.Name = updateEmployees.Name;
-            employee.Email = updateEmployees.Email;
-            employee.Phone = updateEmployees.Phone;
-            employee.Salary = updateEmployees.Salary;
 
-            // update employee
-
-            _ApplicationDbContext.Employees.Update(employee);
-
-            // save changed detail to the db
-
-            await _ApplicationDbContext.SaveChangesAsync();
-
-            // return ok status
-
-            return Ok(employee);
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // Delete user
@@ -144,26 +179,35 @@ namespace EmployeeAdminPortal.Controllers
         // 
         public async Task<IActionResult> DeleteEmployee(Guid Id)
         {
-            // find user in the db using Id
-
-            var DeleteEmp = await _ApplicationDbContext.Employees.FirstOrDefaultAsync(e => e.Id == Id);
-
-            // if its null return not found
-            if (DeleteEmp == null)
+            try
             {
-                return Conflict("User not found in the db");
+
+                // find user in the db using Id
+
+                var DeleteEmp = await _ApplicationDbContext.Employees.FirstOrDefaultAsync(e => e.Id == Id);
+
+                // if its null return not found
+                if (DeleteEmp == null)
+                {
+                    return Conflict("User not found in the db");
+                }
+                // if found delete user from the db
+
+                _ApplicationDbContext.Employees.Remove(DeleteEmp);
+
+                // save changes to the db
+
+                await _ApplicationDbContext.SaveChangesAsync();
+
+                // return ok status
+
+                return Ok(DeleteEmp);
             }
-            // if found delete user from the db
 
-            _ApplicationDbContext.Employees.Remove(DeleteEmp);
-
-            // save changes to the db
-
-            await _ApplicationDbContext.SaveChangesAsync();
-
-            // return ok status
-
-            return Ok(DeleteEmp);
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
 
